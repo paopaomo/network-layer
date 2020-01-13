@@ -1,9 +1,10 @@
 import { isUndefined } from 'lodash';
+import axios from 'axios';
 import instance from "./instance";
 import { STATUS_CODE, getProblemFromStatus, getProblemFromError } from './code';
 
 const convertResponse = (instanceResponse, mapper) => {
-    const isError = instanceResponse instanceof Error || instance.isCancel(instanceResponse);
+    const isError = instanceResponse instanceof Error || axios.isCancel(instanceResponse);
     const response = isError ? instanceResponse.response : instanceResponse;
     const status = response ? response.status : null;
     const problem = isError ? getProblemFromError(instanceResponse) : getProblemFromStatus(status);
