@@ -1,34 +1,43 @@
-import { isUndefined } from 'lodash';
 import axios from 'axios';
-import instance from "./instance";
-import { STATUS_CODE, getProblemFromStatus, getProblemFromError } from './code';
+import { STATUS_CODE } from "./statusCode";
+import { getErrorStatusCode, getErrorMessage } from './helper';
 
-const convertResponse = (instanceResponse, mapper) => {
-    const isError = instanceResponse instanceof Error || axios.isCancel(instanceResponse);
-    const response = isError ? instanceResponse.response : instanceResponse;
-    const status = response ? response.status : null;
-    const problem = isError ? getProblemFromError(instanceResponse) : getProblemFromStatus(status);
-    const originalError = isError ? instanceResponse : null;
-    let data = response ? response.data : null;
-    if(!isUndefined(mapper)) {
-        data = mapper(data);
+const token = 'token';
+
+const myAxios = axios.create({
+    baseURL: process.env.VUE_APP_API_URL,
+    timeout: 30 * 1000,
+    transformRequest: (data, headers) => {
+        headers.Authorization = token;
     }
+});
+
+const handleSuccess = (res) => {
     return {
-        kind: isError ? problem : STATUS_CODE.OK,
-        originalError,
-        data,
-        errorMessage: '',
+        statusCode: STATUS_CODE.OK,
+        data: res.data
     }
 };
 
-const request = (config, mapper) => {
-    return instance(config)
-        .then((instanceResponse) => {
-            return convertResponse(instanceResponse, mapper)
-        })
-        .catch((instanceResponse) => {
-            return convertResponse(instanceResponse, mapper)
-        })
+const handleError = (error) => {
+    const isCancelError = axios.isCancel(error);
+    if(isCancelError) {
+        return {
+            statusCode: STATUS_CODE.REQUEST_CANCELED,
+            data: { message: error.message }
+        }
+    } else {
+        return {
+            statusCode: getErrorStatusCode(error),
+            data: { message: getErrorMessage(error) }
+        }
+    }
+};
+
+const request = (config) => {
+    return myAxios(config)
+        .then(handleSuccess)
+        .catch(handleError)
 };
 
 export default request
