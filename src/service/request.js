@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { STATUS_CODE } from "./statusCode";
-import { getErrorStatusCode, getErrorMessage } from './helper';
+import { getStatusCodeByHttpStatus, getStatusCodeByError } from './helper';
 
 const token = 'token';
 
@@ -12,32 +12,30 @@ const myAxios = axios.create({
     }
 });
 
-const handleSuccess = (res) => {
-    return {
-        statusCode: STATUS_CODE.OK,
-        data: res.data
+const getErrorResponse = (error) => {
+    if(error.response) {
+        return {
+            statusCode: getStatusCodeByHttpStatus(error.response.status),
+            data: error.response.data
+        }
     }
-};
-
-const handleError = (error) => {
-    const isCancelError = axios.isCancel(error);
-    if(isCancelError) {
-        return {
-            statusCode: STATUS_CODE.REQUEST_CANCELED,
-            data: { message: error.message }
-        }
-    } else {
-        return {
-            statusCode: getErrorStatusCode(error),
-            data: { message: getErrorMessage(error) }
-        }
+    return {
+        statusCode: getStatusCodeByError(error),
+        data: error
     }
 };
 
 const request = (config) => {
     return myAxios(config)
-        .then(handleSuccess)
-        .catch(handleError)
+        .then((res) => {
+            return {
+                statusCode: STATUS_CODE.OK,
+                data: res.data
+            }
+        })
+        .catch((error) => {
+            return getErrorResponse(error)
+        })
 };
 
 export default request

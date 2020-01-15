@@ -1,7 +1,8 @@
 import { inRange } from "lodash";
-import { STATUS_CODE } from './statusCode'
+import axios from 'axios';
+import { STATUS_CODE } from './statusCode';
 
-const getByHttpStatus = (status) => {
+export const getStatusCodeByHttpStatus = (status) => {
     if(inRange(status, 400, 500)) {
         return STATUS_CODE.CLIENT;
     }
@@ -11,7 +12,10 @@ const getByHttpStatus = (status) => {
     return STATUS_CODE.UNKNOWN;
 };
 
-const getByError = (error) => {
+export const getStatusCodeByError = (error) => {
+    if(axios.isCancel(error)) {
+        return STATUS_CODE.REQUEST_CANCELED;
+    }
     switch(error.message) {
         case 'Request aborted':
             return STATUS_CODE.REQUEST_ABORTED;
@@ -22,20 +26,5 @@ const getByError = (error) => {
                 return STATUS_CODE.TIMEOUT;
             }
             return STATUS_CODE.UNKNOWN;
-    }
-};
-
-export const getErrorStatusCode = (error) => {
-    if(error.response) {
-        return getByHttpStatus(error.response.status);
-    }
-    return getByError(error);
-};
-
-export const getErrorMessage = (error) => {
-    if(error.response) {
-        return error.response.data.error ? error.response.data.error.message : '';
-    } else {
-        return error.message;
     }
 };
