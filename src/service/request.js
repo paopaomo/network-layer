@@ -6,10 +6,12 @@ const token = 'token';
 
 const myAxios = axios.create({
     baseURL: process.env.VUE_APP_API_URL,
-    timeout: 30 * 1000,
-    transformRequest: (data, headers) => {
-        headers.Authorization = token;
-    }
+    timeout: 30 * 1000
+});
+
+myAxios.interceptors.request.use(config => {
+    config.headers.Authorization = token;
+    return config; 
 });
 
 const getErrorResponse = (error) => {
